@@ -11,11 +11,10 @@ export default function HomePage() {
       </p>
       
       <Link 
-        href="/catalogo" 
+        href="/" 
         style={{ color: '#0070f3', textDecoration: 'underline' }}
       >
-        Ir al Catálogo
-      </Link>
+        Inicio</Link>
       
       <p style={{ marginTop: '30px', color: '#666' }}>
         El Navbar de arriba debe funcionar ahora para ir a /admin.
