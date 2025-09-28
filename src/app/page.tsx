@@ -5,7 +5,7 @@ import Link from 'next/link';
 export default function HomePage() {
   return (
     <main style={{ padding: '40px', maxWidth: '800px', margin: '0 auto', textAlign: 'center' }}>
-      <h1>¡Home Funcional!</h1>
+      <h1>¡Home Funcionaal!</h1>
       <p style={{ margin: '20px 0' }}>
         El problema de ruteo ha desaparecido.
       </p>
