@@ -1,105 +1,137 @@
-// app/admin/page.tsx
-'use client'; 
+'use client';
 
-import { useState } from 'react';
-import { createClient } from '@supabase/supabase-js';
+import { useAuth } from '@/lib/AuthProvider';
+import { useRouter } from 'next/navigation';
+import React, { useState } from 'react';
 
-// --- CONFIGURACIÓN DE SUPABASE (Temporalmente pública) ---
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+// Reemplaza esto con tu cliente real de Supabase si es necesario para crear productos
+const mockCreateProduct = (product: { name: string, price: number }) => {
+    return new Promise(resolve => setTimeout(() => {
+        console.log("Producto creado (Mock):", product);
+        resolve({ success: true });
+    }, 1000));
+};
 
-export default function AdminPage() {
-  const [nombre, setNombre] = useState('');
-  const [precio, setPrecio] = useState('');
-  const [stock, setStock] = useState('');
-  const [mensaje, setMensaje] = useState('');
+export default function AdminDashboard() {
+    // 1. Usar el hook de autenticación
+    const { user, isAdmin, loading } = useAuth();
+    const router = useRouter();
+    
+    const [productName, setProductName] = useState('');
+    const [productPrice, setProductPrice] = useState(0);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [message, setMessage] = useState('');
 
-  // Función para manejar el envío del formulario
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setMensaje('Agregando producto...');
-
-    const precioNumerico = parseFloat(precio);
-    const stockNumerico = parseInt(stock);
-
-    const { error } = await supabase
-      .from('productos')
-      .insert([
-        { 
-          nombre: nombre, 
-          precio: precioNumerico, 
-          stock: stockNumerico 
-          // La descripción y URL de imagen se pueden agregar fácilmente
-        },
-      ]);
-
-    if (error) {
-      console.error(error);
-      setMensaje(`⛔ ERROR: No se pudo agregar el producto. Revisa la RLS en Supabase.`);
-    } else {
-      setMensaje(`✅ Producto '${nombre}' agregado con éxito!`);
-      // Limpiar formulario
-      setNombre('');
-      setPrecio('');
-      setStock('');
+    // --- Lógica de Protección ---
+    if (loading) {
+        return (
+            <div style={{ padding: '40px', textAlign: 'center' }}>
+                <p>Cargando sesión y verificando permisos...</p>
+            </div>
+        );
     }
-  };
 
-  return (
-    <div style={{ padding: '40px', maxWidth: '600px', margin: '0 auto' }}>
-      <h1>Dashboard: Agregar Nuevo Producto</h1>
-      <p style={{ color: 'green', fontWeight: 'bold' }}>{mensaje}</p>
+    if (!user) {
+        // Si no está logueado, lo manda a Login
+        router.push('/login');
+        return null;
+    }
 
-      <form onSubmit={handleSubmit} style={{ display: 'grid', gap: '15px' }}>
-        <label>
-          Nombre:
-          <input 
-            type="text" 
-            value={nombre} 
-            onChange={(e) => setNombre(e.target.value)} 
-            required 
-            style={{ width: '100%', padding: '8px' }}
-          />
-        </label>
-        
-        <label>
-          Precio:
-          <input 
-            type="number" 
-            value={precio} 
-            onChange={(e) => setPrecio(e.target.value)} 
-            required 
-            min="0.01"
-            step="0.01"
-            style={{ width: '100%', padding: '8px' }}
-          />
-        </label>
+    if (!isAdmin) {
+        // Si está logueado pero NO es admin, le niega el acceso
+        return (
+            <div style={{ padding: '40px', textAlign: 'center', color: '#8b0000' }}>
+                <h2>Acceso Denegado</h2>
+                <p>No tienes los permisos de administrador para acceder a este dashboard.</p>
+                <button 
+                    onClick={() => router.push('/')}
+                    style={{ marginTop: '20px', padding: '10px 20px', backgroundColor: '#0070f3', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+                >
+                    Volver al Catálogo
+                </button>
+            </div>
+        );
+    }
+    // --- Fin Lógica de Protección ---
 
-        <label>
-          Stock:
-          <input 
-            type="number" 
-            value={stock} 
-            onChange={(e) => setStock(e.target.value)} 
-            required 
-            min="0"
-            style={{ width: '100%', padding: '8px' }}
-          />
-        </label>
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setMessage('');
+        setIsSubmitting(true);
 
-        <button 
-          type="submit" 
-          style={{ padding: '10px', backgroundColor: '#0070f3', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
-        >
-          Guardar Producto
-        </button>
-      </form>
-      
-      <p style={{ marginTop: '20px' }}>
-        <a href="/catalogo" style={{ color: '#0070f3' }}>← Ver Catálogo (Página Principal)</a>
-      </p>
-    </div>
-  );
+        try {
+            // Aquí iría la lógica real de supabase.from('products').insert(...)
+            await mockCreateProduct({ name: productName, price: productPrice });
+            setMessage(`¡Producto "${productName}" creado con éxito!`);
+            setProductName('');
+            setProductPrice(0);
+        } catch (error) {
+            setMessage('Error al crear el producto.');
+            console.error(error);
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    return (
+        <div style={{ maxWidth: '600px', margin: '50px auto', padding: '20px', border: '1px solid #ddd', borderRadius: '8px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
+            <h1 style={{ textAlign: 'center', color: '#8b0000' }}>Dashboard de Administración</h1>
+            <p style={{ textAlign: 'center', marginBottom: '30px', color: '#555' }}>
+                Solo visible para usuarios con `is_admin: true` en Supabase.
+            </p>
+
+            {message && (
+                <div style={{ padding: '10px', backgroundColor: message.includes('Error') ? '#fdd' : '#dfd', color: message.includes('Error') ? '#c00' : '#090', borderRadius: '4px', marginBottom: '15px' }}>
+                    {message}
+                </div>
+            )}
+
+            <form onSubmit={handleSubmit}>
+                <div style={{ marginBottom: '15px' }}>
+                    <label htmlFor="name" style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Nombre del Producto</label>
+                    <input
+                        id="name"
+                        type="text"
+                        value={productName}
+                        onChange={(e) => setProductName(e.target.value)}
+                        required
+                        style={{ width: '100%', padding: '10px', boxSizing: 'border-box', border: '1px solid #ccc', borderRadius: '4px' }}
+                        disabled={isSubmitting}
+                    />
+                </div>
+                <div style={{ marginBottom: '20px' }}>
+                    <label htmlFor="price" style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>Precio ($)</label>
+                    <input
+                        id="price"
+                        type="number"
+                        value={productPrice}
+                        onChange={(e) => setProductPrice(parseFloat(e.target.value))}
+                        required
+                        min="0"
+                        step="0.01"
+                        style={{ width: '100%', padding: '10px', boxSizing: 'border-box', border: '1px solid #ccc', borderRadius: '4px' }}
+                        disabled={isSubmitting}
+                    />
+                </div>
+                
+                <button
+                    type="submit"
+                    disabled={isSubmitting || !user}
+                    style={{ 
+                        width: '100%', 
+                        padding: '12px', 
+                        backgroundColor: isSubmitting || !user ? '#aaa' : '#8b0000', 
+                        color: 'white', 
+                        border: 'none', 
+                        borderRadius: '4px', 
+                        cursor: isSubmitting || !user ? 'not-allowed' : 'pointer',
+                        fontWeight: 'bold',
+                        transition: 'background-color 0.2s'
+                    }}
+                >
+                    {isSubmitting ? 'Guardando...' : 'Agregar Nuevo Producto'}
+                </button>
+            </form>
+        </div>
+    );
 }
