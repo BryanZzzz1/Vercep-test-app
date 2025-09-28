@@ -156,15 +156,15 @@ export default function AdminDashboardPage() {
         fontFamily: 'var(--font-geist-sans), sans-serif',
     };
 
-    const inputStyle = {
-        width: '100%', 
-        padding: '12px',
-        boxSizing: 'border-box', 
-        border: '1px solid #555', 
-        borderRadius: '8px', 
-        backgroundColor: darkThemeColors.inputBg, 
-        color: darkThemeColors.text,
-        marginBottom: '15px',
+    const inputStyle: React.CSSProperties = {
+    width: '100%',
+    padding: '12px',
+    boxSizing: 'border-box', // ✅ ahora TS sabe que es válido
+    border: '1px solid #555',
+    borderRadius: '8px',
+    backgroundColor: darkThemeColors.inputBg,
+    color: darkThemeColors.text,
+    marginBottom: '15px',
     };
 
     const fileInputStyle = {
